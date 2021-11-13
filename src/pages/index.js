@@ -30,8 +30,6 @@ const Disclaimer = styled.div`
     background: white;
 `;
 
-const localStorage = window.localStorage;
-
 const IndexPage = () => {
     const [form, updateForm] = React.useReducer((currentFields, event) => {
         const newForm = {
@@ -41,21 +39,36 @@ const IndexPage = () => {
 
         localStorage.setItem('form', JSON.stringify(newForm));
         return newForm;
-    }, JSON.parse(localStorage.getItem('form')) || {
+    }, {
         mode: 'ccr',
         salinity: 'fresh'
     });
 
     const [result, setResult] = React.useState('');
-    const [showDisclaimer, setShowDisclaimer] = React.useState(localStorage.getItem('showDisclaimer') === true ?? true);
+    const [showDisclaimer, setShowDisclaimer] = React.useState(false);
+
+    React.useEffect(() => {
+        const formState = JSON.parse(window.localStorage.getItem('form'));
+        setShowDisclaimer(window.localStorage.getItem('showDisclaimer') === true ?? true);
+
+        if (formState) {
+            Object.keys(formState).map(field => updateForm({
+                event: {
+                    target: {
+                        name: field,
+                        value: formState[field],
+                    }
+                }
+            }));
+        }
+    });
 
     const hideDisclaimer = () => {
         setShowDisclaimer(false);
-        localStorage.setItem('showDisclaimer', false);
+        window.localStorage.setItem('showDisclaimer', false);
     }
 
     const calculate = () => {
-        console.log(form)
         if (form.mode === 'oc') {
             setResult(planOC(form));
         } else if (form.mode === 'ccr') {
