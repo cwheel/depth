@@ -53,11 +53,9 @@ const IndexPage = () => {
 
         if (formState) {
             Object.keys(formState).map(field => updateForm({
-                event: {
-                    target: {
-                        name: field,
-                        value: formState[field],
-                    }
+                target: {
+                    name: field,
+                    value: formState[field],
                 }
             }));
         }
