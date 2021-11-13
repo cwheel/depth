@@ -45,11 +45,11 @@ const IndexPage = () => {
     });
 
     const [result, setResult] = React.useState('');
-    const [showDisclaimer, setShowDisclaimer] = React.useState(false);
+    const [showDisclaimer, setShowDisclaimer] = React.useState(true);
 
     React.useEffect(() => {
         const formState = JSON.parse(window.localStorage.getItem('form'));
-        setShowDisclaimer(window.localStorage.getItem('showDisclaimer') === true ?? true);
+        setShowDisclaimer(window.localStorage.getItem('showDisclaimer') !== "false");
 
         if (formState) {
             Object.keys(formState).map(field => updateForm({
@@ -59,7 +59,7 @@ const IndexPage = () => {
                 }
             }));
         }
-    });
+    }, []);
 
     const hideDisclaimer = () => {
         setShowDisclaimer(false);
