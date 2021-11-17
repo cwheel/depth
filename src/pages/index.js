@@ -2,9 +2,10 @@ import './global.css'
 
 import * as React from 'react'
 import { Helmet } from 'react-helmet'
-import styled from '@emotion/styled';
+import styled from '@emotion/styled'
 
-import { planOC, planCCR } from '../planner';
+import { planOC, planCCR } from '../planner'
+import GasPlanner from '../components/gasPlanner'
 
 const PageContainer = styled.div`
     display: flex;
@@ -53,11 +54,20 @@ const RejectButton = styled.button`
 `;
 
 const IndexPage = () => {
+    const [result, setResult] = React.useState('');
+    const [showDisclaimer, setShowDisclaimer] = React.useState(false);
     const [form, updateForm] = React.useReducer((currentFields, event) => {
         const newForm = {
             ...currentFields,
             [event.target.name]: event.target.type === 'number' ? parseFloat(event.target.value) : event.target.value
         };
+
+        let result;
+        if (newForm.mode === 'oc') {
+            setResult(planOC(newForm));
+        } else if (newForm.mode === 'ccr') {
+            setResult(planCCR(newForm));
+        }
 
         localStorage.setItem('form', JSON.stringify(newForm));
         return newForm;
@@ -66,12 +76,11 @@ const IndexPage = () => {
         salinity: 'fresh'
     });
 
-    const [result, setResult] = React.useState('');
-    const [showDisclaimer, setShowDisclaimer] = React.useState(false);
-
     React.useEffect(() => {
         const formState = JSON.parse(window.localStorage.getItem('form'));
         setShowDisclaimer(window.localStorage.getItem('showDisclaimer') !== "false");
+
+        console.log('restored', formState)
 
         if (formState) {
             Object.keys(formState).map(field => updateForm({
@@ -87,14 +96,6 @@ const IndexPage = () => {
         setShowDisclaimer(false);
         window.localStorage.setItem('showDisclaimer', false);
     }
-
-    const calculate = () => {
-        if (form.mode === 'oc') {
-            setResult(planOC(form));
-        } else if (form.mode === 'ccr') {
-            setResult(planCCR(form));
-        }
-    };
 
     return (
         <>
@@ -125,8 +126,10 @@ const IndexPage = () => {
                         <option value='salt'>Salt Water</option>
                     </select>
 
-                    <label for='totalGas'>Total Gas (cf.)</label>
-                    <input placeholder='Total Gas (cf.)' type='number' step='0.01' name='totalGas' onChange={updateForm} value={form.totalGas} />
+                    <GasPlanner onChange={(totalGas, tanks) => updateForm({target: {
+                        name: 'totalGas',
+                        value: totalGas,
+                    }})} />
 
                     <label for='depth'>Depth (ft.)</label>
                     <input placeholder='Depth' type='number' step='0.01' name='depth' onChange={updateForm} value={form.depth} />
@@ -144,11 +147,9 @@ const IndexPage = () => {
 
                     <label for='sacExit'>Exit SAC Rate</label>
                     <input placeholder='Exit SAC Rate' type='number' step='0.01' name='sacExit' onChange={updateForm} value={form.sacExit} />
-
-                    <button onClick={calculate}>Calculate</button>
                 </FormGroup>
 
-                {result && <b>Maximum of {result} ft.</b>}
+                {result && !Number.isNaN(result) && result !== 0 ? <b>{result} ft.</b> : null}
             </PageContainer>
         </>
     );
