@@ -4,7 +4,7 @@ import * as React from 'react'
 import { Helmet } from 'react-helmet'
 import styled from '@emotion/styled'
 
-import { planOC, planCCR } from '../planner'
+import { planOC, planCCR, planDrops } from '../planner'
 import GasPlanner from '../components/gasPlanner'
 
 const PageContainer = styled.div`
@@ -62,7 +62,6 @@ const IndexPage = () => {
             [event.target.name]: event.target.type === 'number' ? parseFloat(event.target.value) : event.target.value
         };
 
-        let result;
         if (newForm.mode === 'oc') {
             setResult(planOC(newForm));
         } else if (newForm.mode === 'ccr') {
@@ -91,6 +90,10 @@ const IndexPage = () => {
             }));
         }
     }, []);
+
+    React.useEffect(() => {
+        console.log(planDrops(form.tanks ?? [], form.totalGas ?? 0, result ?? 0, form.mode ?? 'ccr'))
+    }, [form, result]);
 
     const hideDisclaimer = () => {
         setShowDisclaimer(false);
@@ -126,10 +129,17 @@ const IndexPage = () => {
                         <option value='salt'>Salt Water</option>
                     </select>
 
-                    <GasPlanner onChange={(totalGas, tanks) => updateForm({target: {
-                        name: 'totalGas',
-                        value: totalGas,
-                    }})} />
+                    <GasPlanner onChange={(totalGas, tanks) => {
+                        updateForm({target: {
+                            name: 'totalGas',
+                            value: totalGas,
+                        }});
+
+                        updateForm({target: {
+                            name: 'tanks',
+                            value: tanks,
+                        }});
+                    }} />
 
                     <label for='depth'>Depth (ft.)</label>
                     <input placeholder='Depth' type='number' step='0.01' name='depth' onChange={updateForm} value={form.depth} />

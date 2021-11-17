@@ -104,7 +104,10 @@ const GasPlanner = ({ onChange }) => {
 
     React.useEffect(() => {
         if (isMounted.current && onChange) {
-            onChange(totalGas, tanks);
+            onChange(totalGas, tanks.map(tank => ({
+                fill: caveFilled ? tank.caveFill ?? tanks.fill : tanks.fill,
+                ...tank 
+            })));
         } else {
             isMounted.current = true;
         }

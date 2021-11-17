@@ -67,4 +67,28 @@ const planOC = ({ sacPenetration, sacExit, totalGas, penetrationRate, exitRate, 
     return totalGas * Math.pow(((penetrationRmv / penetrationRate) + ((2 * exitRmv) / exitRate)), -1);
 };
 
-export { planCCR, planOC };
+const planDrops = (tanks, totalGas, maxDistance, mode) => {
+    // How much of the total gas supply is used per foot? We plan on using no more
+    // than half of the gas supply to exit.
+    const gasPerFoot = (totalGas / 2) / maxDistance;
+
+    // Someone is planning on using more than one set of doubles, nonsensical
+    if (tanks.filter(tank => tank.doubles).length > 2) {
+        return null;
+    }
+
+    const drops = [];
+
+    let currentDistance = maxDistance;
+    const tanksUsageOrdered = mode === 'ccr' ? tanks.reverse() : tanks;
+
+    for (let tank of tanksUsageOrdered) {
+        const exitProgress = (tank.fill / 2) / gasPerFoot;
+        currentDistance = currentDistance - exitProgress
+        drops.push(currentDistance);
+    }
+
+    return drops;
+};
+
+export { planCCR, planOC, planDrops };
