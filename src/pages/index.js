@@ -53,6 +53,14 @@ const RejectButton = styled.button`
     margin-left: 10px;
 `;
 
+const Plan = styled.div`
+    border-radius: 10px;
+    ${'' /* background: #f1f1f1; */}
+    border: dashed 3px #f1f1f1;
+
+    padding: 15px;
+`;
+
 const IndexPage = () => {
     const [result, setResult] = React.useState(0);
     const [drops, setDrops] = React.useState([]);
@@ -162,22 +170,27 @@ const IndexPage = () => {
                     <label for='sacExit'>Exit SAC Rate</label>
                     <input placeholder='Exit SAC Rate' type='number' step='0.01' name='sacExit' onChange={updateForm} value={form.sacExit} />
                 </FormGroup>
+                
+                <Plan>
+                    <b>Dive Plan</b>
 
-                {result > 0 && !Number.isNaN(result) && result !== 0 ? <b>{result} ft.</b> : null}
-                {drops.length > 0 && <table>
-                    {form.mode === 'ccr' ? <tr>
-                        <td>Bailout</td>
-                        <td>Stage At</td>
-                    </tr> : <tr>
-                        <td>Stage</td>
-                        <td>Estimated Drop</td>
-                    </tr>}
+                    {result > 0 && !Number.isNaN(result) && result !== 0 ? <div>Max Penetration: {result} ft.</div> : null}
 
-                    {drops.map(drop => <tr>
-                        <td>{drop.tank.name}</td>
-                        <td>{drop.penetration} ft.</td>
-                    </tr>)}
-                </table>}
+                    {drops.length > 0 && <table>
+                        {form.mode === 'ccr' ? <tr>
+                            <td>Bailout</td>
+                            <td>Stage At</td>
+                        </tr> : <tr>
+                            <td>Stage</td>
+                            <td>Estimated Drop</td>
+                        </tr>}
+
+                        {drops.map(drop => <tr>
+                            <td>{drop.tank.name}</td>
+                            <td>{drop.penetration} ft.</td>
+                        </tr>)}
+                    </table>}
+                </Plan>
             </PageContainer>
         </>
     );
