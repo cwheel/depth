@@ -67,28 +67,64 @@ const planOC = ({ sacPenetration, sacExit, totalGas, penetrationRate, exitRate, 
     return totalGas * Math.pow(((penetrationRmv / penetrationRate) + ((2 * exitRmv) / exitRate)), -1);
 };
 
-const planDrops = (tanks, totalGas, maxDistance, mode) => {
-    // How much of the total gas supply is used per foot? We plan on using no more
-    // than half of the gas supply to exit.
+const planCCRBailoutDrops = (tanks, totalGas, maxDistance, mode) => {
+    // How much of the total gas supply is used per foot given that we plan on
+    // using no more than half of the gas supply to exit in CCR mode or one third
+    // of the gas to penetrate in open circut mode.
     const gasPerFoot = (totalGas / 2) / maxDistance;
 
     // Someone is planning on using more than one set of doubles, nonsensical
     if (tanks.filter(tank => tank.doubles).length > 2) {
-        return null;
+        return [];
+    }
+
+    // The first listed tank(s) need to be a pair of doubles
+    if (tanks.length > 0 && !tanks[0].double) {
+        return [];
     }
 
     const drops = [];
-
     let currentDistance = maxDistance;
-    const tanksUsageOrdered = mode === 'ccr' ? tanks.reverse() : tanks;
 
-    for (let tank of tanksUsageOrdered) {
-        const exitProgress = (tank.fill / 2) / gasPerFoot;
-        currentDistance = currentDistance - exitProgress
-        drops.push(currentDistance);
+    for (let i = 0; i < tanks.length; i++) {
+        const tank = tanks[i];
+
+        // How far do we get on half of the tanks gas?
+        const progress = (tank.fill / 2) / gasPerFoot;
+
+        currentDistance = currentDistance - progress;
+
+        // If we're still not out, note where we'd need to have access to this
+        // gas to still maintain 50% redundancy in the tank(s) we're currently
+        // using
+        if (currentDistance > 0) {
+            drops.push({ tank: tanks[i + 1], penetration: currentDistance });
+        }
     }
 
     return drops;
 };
 
-export { planCCR, planOC, planDrops };
+const planOCStageDrops = (tanks, penetrationRate, sacPenetration) => {
+    const tanksOrdered = tanks.reverse();
+    const drops = [];
+    let penetration = 0;
+
+    for (let tank of tanksOrdered) {
+        if (tank.double) {
+            continue;
+        }
+
+        // Drop a stage at 1700 psi. AL stages hold 3000 psi, 1 - (17/30) = 0.43
+        const tankUsableGas = tank.fill * 0.43;
+
+        const estimatedTankDrop = tankUsableGas * sacPenetration * penetrationRate;
+        penetration += estimatedTankDrop;
+
+        drops.push({ tank, penetration });
+    }
+
+    return drops;
+};
+
+export { planCCR, planOC, planCCRBailoutDrops, planOCStageDrops };

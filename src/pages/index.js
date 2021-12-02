@@ -4,7 +4,7 @@ import * as React from 'react'
 import { Helmet } from 'react-helmet'
 import styled from '@emotion/styled'
 
-import { planOC, planCCR, planDrops } from '../planner'
+import { planOC, planCCR, planCCRBailoutDrops, planOCStageDrops } from '../planner'
 import GasPlanner from '../components/gasPlanner'
 
 const PageContainer = styled.div`
@@ -54,7 +54,8 @@ const RejectButton = styled.button`
 `;
 
 const IndexPage = () => {
-    const [result, setResult] = React.useState('');
+    const [result, setResult] = React.useState(0);
+    const [drops, setDrops] = React.useState([]);
     const [showDisclaimer, setShowDisclaimer] = React.useState(false);
     const [form, updateForm] = React.useReducer((currentFields, event) => {
         const newForm = {
@@ -77,9 +78,7 @@ const IndexPage = () => {
 
     React.useEffect(() => {
         const formState = JSON.parse(window.localStorage.getItem('form'));
-        setShowDisclaimer(window.localStorage.getItem('showDisclaimer') !== "false");
-
-        console.log('restored', formState)
+        setShowDisclaimer(window.localStorage.getItem('showDisclaimer') !== 'false');
 
         if (formState) {
             Object.keys(formState).map(field => updateForm({
@@ -92,7 +91,12 @@ const IndexPage = () => {
     }, []);
 
     React.useEffect(() => {
-        console.log(planDrops(form.tanks ?? [], form.totalGas ?? 0, result ?? 0, form.mode ?? 'ccr'))
+        const tanks = form.tanks ?? [];
+        setDrops(
+            form.mode === 'ccr' ?
+                planCCRBailoutDrops(tanks, form.totalGas ?? 0, result, form.mode)
+                : planOCStageDrops(tanks, form.penetrationRate, form.sacPenetration)
+        );
     }, [form, result]);
 
     const hideDisclaimer = () => {
@@ -159,7 +163,21 @@ const IndexPage = () => {
                     <input placeholder='Exit SAC Rate' type='number' step='0.01' name='sacExit' onChange={updateForm} value={form.sacExit} />
                 </FormGroup>
 
-                {result && !Number.isNaN(result) && result !== 0 ? <b>{result} ft.</b> : null}
+                {result > 0 && !Number.isNaN(result) && result !== 0 ? <b>{result} ft.</b> : null}
+                {drops.length > 0 && <table>
+                    {form.mode === 'ccr' ? <tr>
+                        <td>Bailout</td>
+                        <td>Stage At</td>
+                    </tr> : <tr>
+                        <td>Stage</td>
+                        <td>Estimated Drop</td>
+                    </tr>}
+
+                    {drops.map(drop => <tr>
+                        <td>{drop.tank.name}</td>
+                        <td>{drop.penetration} ft.</td>
+                    </tr>)}
+                </table>}
             </PageContainer>
         </>
     );
